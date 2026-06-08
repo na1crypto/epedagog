@@ -1,117 +1,85 @@
-﻿import express from 'express';
+import express from 'express';
 import db from '../db/index.js';
-import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-/**
- * GET /api/monitoring/stats
- * Dashboard & Monitoring statistics (Admin & Pedagog & Mehmon can view, but admin gets full breakdown)
- */
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    // 1. Total documents count
-    const totalDocsRes = await db.query('SELECT COUNT(*) FROM documents');
-    const totalDocuments = parseInt(totalDocsRes[0][0].count, 10);
+    const [[{ totalDocuments }]] = await db.query('SELECT COUNT(*) AS totalDocuments FROM documents');
+    const [[{ totalUsers }]]     = await db.query('SELECT COUNT(*) AS totalUsers FROM users');
+    const [[{ totalPedagog }]]   = await db.query("SELECT COUNT(*) AS totalPedagog FROM users WHERE role = 'pedagog'");
+    const [[{ todayUploads }]]   = await db.query('SELECT COUNT(*) AS todayUploads FROM documents WHERE DATE(created_at) = CURDATE()');
+    const [[{ overdueDocuments }]] = await db.query("SELECT COUNT(*) AS overdueDocuments FROM documents WHERE deadline < CURDATE() AND status <> 'uploaded'");
 
-    // 2. Total users count
-    const totalUsersRes = await db.query('SELECT COUNT(*) FROM users');
-    const totalUsers = parseInt(totalUsersRes[0][0].count, 10);
-
-    // 3. Total pedagog users count
-    const totalPedagRes = await db.query("SELECT COUNT(*) FROM users WHERE role = 'pedagog'");
-    const totalPedagog = parseInt(totalPedagRes[0][0].count, 10);
-
-    // 4. Today's uploads
-    const todayUploadsRes = await db.query("SELECT COUNT(*) FROM documents WHERE created_at::date = CURRENT_DATE");
-    const todayUploads = parseInt(todayUploadsRes[0][0].count, 10);
-
-    // 5. Overdue documents
-    const overdueRes = await db.query("SELECT COUNT(*) FROM documents WHERE deadline < CURRENT_DATE AND status <> 'uploaded'");
-    const overdueDocuments = parseInt(overdueRes[0][0].count, 10);
-
-    // 6. Weekly activity data for chart (Dush - Yak)
-    // Counts documents uploaded in the last 7 days grouped by weekday
-    const weeklyQuery = `
-      SELECT 
-        EXTRACT(ISODOW FROM created_at) as dow,
-        COUNT(*) as count
-      FROM documents
-      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
-      GROUP BY dow
-      ORDER BY dow
-    `;
-    const weeklyRes = await db.query(weeklyQuery);
-    
-    // Initialize array with 7 elements (Monday - Sunday)
+    // Weekly activity: DAYOFWEEK returns 1=Sun,2=Mon...7=Sat → remap to Mon-Sun (0-6)
+    const weekStart = 'DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)';
+    const [weeklyRows] = await db.query(
+      `SELECT DAYOFWEEK(created_at) AS dow, COUNT(*) AS cnt
+       FROM documents
+       WHERE created_at >= ${weekStart}
+       GROUP BY dow`
+    );
     const weeklyActivity = [0, 0, 0, 0, 0, 0, 0];
-    weeklyRes[0].forEach(row => {
-      const idx = parseInt(row.dow, 10) - 1; // ISODOW is 1-indexed (Monday=1, Sunday=7)
-      if (idx >= 0 && idx < 7) {
-        weeklyActivity[idx] = parseInt(row.count, 10);
-      }
+    weeklyRows.forEach(r => {
+      // DAYOFWEEK: 1=Sun,2=Mon,...,7=Sat → Mon=index 0
+      const dow = parseInt(r.dow);
+      const idx = dow === 1 ? 6 : dow - 2; // Sun→6, Mon→0, ..., Sat→5
+      if (idx >= 0 && idx < 7) weeklyActivity[idx] = parseInt(r.cnt);
     });
 
-    // 7. Teachers stats for monitoring table
-    const teachersQuery = `
-      SELECT 
-        u.id, 
-        u.full_name as name, 
-        u.subject,
-        COUNT(d.id) as uploaded,
-        COUNT(CASE WHEN d.deadline >= d.created_at::date OR d.deadline IS NULL THEN 1 END) as on_time,
-        COUNT(CASE WHEN d.deadline < d.created_at::date THEN 1 END) as late
+    // Teachers stats
+    const [teacherRows] = await db.query(`
+      SELECT u.id, u.full_name AS name, u.subject,
+        COUNT(d.id) AS uploaded,
+        SUM(CASE WHEN d.deadline IS NULL OR d.deadline >= DATE(d.created_at) THEN 1 ELSE 0 END) AS on_time,
+        SUM(CASE WHEN d.deadline IS NOT NULL AND d.deadline < DATE(d.created_at) THEN 1 ELSE 0 END) AS late
       FROM users u
       LEFT JOIN documents d ON u.id = d.uploaded_by
       WHERE u.role = 'pedagog'
       GROUP BY u.id, u.full_name, u.subject
       ORDER BY u.full_name ASC
-    `;
-    const teachersRes = await db.query(teachersQuery);
-    
-    const requiredDocsConst = 14; // Default required documents target
-    const teachersStats = teachersRes[0].map(t => {
-      const uploaded = parseInt(t.uploaded, 10);
-      const onTime = parseInt(t.on_time, 10);
-      const late = parseInt(t.late, 10);
-      
-      // Calculate status based on uploaded percentage
-      let status = 'danger';
-      if (uploaded >= requiredDocsConst) {
-        status = 'excellent';
-      } else if (uploaded >= 10) {
-        status = 'good';
-      } else if (uploaded >= 6) {
-        status = 'warning';
-      }
+    `);
 
+    const required = 14;
+    const teachersStats = teacherRows.map(t => {
+      const uploaded = parseInt(t.uploaded) || 0;
+      let status = 'danger';
+      if (uploaded >= required) status = 'excellent';
+      else if (uploaded >= 10)  status = 'good';
+      else if (uploaded >= 6)   status = 'warning';
       return {
-        id: t.id,
-        name: t.name,
-        subject: t.subject || 'â€”',
-        uploaded,
-        required: requiredDocsConst,
-        onTime,
-        late,
+        id: t.id, name: t.name, subject: t.subject || '—',
+        uploaded, required,
+        onTime: parseInt(t.on_time) || 0,
+        late: parseInt(t.late) || 0,
         status,
       };
     });
 
-    res.json({
-      totalDocuments,
-      totalUsers,
-      totalPedagog,
-      todayUploads,
-      overdueDocuments,
-      weeklyActivity,
-      teachersStats,
-    });
+    res.json({ totalDocuments, totalUsers, totalPedagog, todayUploads, overdueDocuments, weeklyActivity, teachersStats });
   } catch (error) {
-    console.error('Fetch monitoring stats error:', error);
+    console.error('Monitoring stats error:', error);
+    res.status(500).json({ error: 'Server xatoligi.' });
+  }
+});
+
+// Activity feed for real-time dashboard
+router.get('/activity', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT a.id, a.action, a.entity_type, a.entity_id, a.created_at,
+             u.full_name AS user_name
+      FROM activity_logs a
+      LEFT JOIN users u ON a.user_id = u.id
+      ORDER BY a.created_at DESC
+      LIMIT 20
+    `);
+    res.json({ data: rows });
+  } catch (error) {
+    console.error('Activity feed error:', error);
     res.status(500).json({ error: 'Server xatoligi.' });
   }
 });
 
 export default router;
-
-

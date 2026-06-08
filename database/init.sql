@@ -55,10 +55,3 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
-
-CREATE INDEX IF NOT EXISTS idx_documents_uploaded_by ON documents(uploaded_by);
-CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category);
-CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
-CREATE INDEX IF NOT EXISTS idx_portfolios_user_id ON portfolios(user_id);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at);

@@ -53,49 +53,50 @@ export function renderSidebar() {
   };
 
   return `
-    <aside id="sidebar" class="fixed left-0 top-0 h-full w-64 gradient-sidebar z-40 flex flex-col transition-transform duration-300 lg:translate-x-0 -translate-x-full">
-      <!-- Logo -->
-      <div class="p-6 pb-4">
+    <aside id="sidebar" class="fixed left-0 top-0 h-full w-64 z-40 flex flex-col transition-transform duration-300 lg:translate-x-0 -translate-x-full" style="background: linear-gradient(180deg, #1a2e4a 0%, #0f1d31 100%);">
+      <!-- Logo area -->
+      <div class="px-5 pt-5 pb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: #0891b2;">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
             </svg>
           </div>
           <div>
-            <h1 class="text-white font-bold text-lg tracking-tight">E-PEDAGOG</h1>
-            <p class="text-dark-400 text-[11px] font-medium tracking-wider uppercase">Boshqaruv tizimi</p>
+            <h1 class="text-white font-bold text-base tracking-tight leading-tight">E-PEDAGOG</h1>
+            <p class="text-slate-500 text-[10px] font-medium uppercase tracking-widest">Boshqaruv tizimi</p>
           </div>
         </div>
       </div>
 
-      <!-- Divider -->
-      <div class="mx-5 h-px bg-gradient-to-r from-transparent via-dark-600 to-transparent"></div>
+      <!-- Teal divider line -->
+      <div class="mx-5 h-px" style="background: linear-gradient(90deg, #0891b2, transparent);"></div>
 
       <!-- Navigation -->
-      <nav class="flex-1 px-4 py-5 space-y-1 overflow-y-auto">
+      <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         ${filteredMenu.map(item => `
-          <a href="#/${item.id}" class="sidebar-link relative ${currentPath === item.id ? 'active' : ''}" data-page="${item.id}">
+          <a href="#/${item.id}" class="sidebar-link ${currentPath === item.id ? 'active' : ''}" data-page="${item.id}">
             ${item.icon}
             <span class="text-sm">${item.label}</span>
           </a>
         `).join('')}
       </nav>
 
-      <!-- User Profile -->
-      <div class="p-4 mx-3 mb-4 rounded-xl bg-white/5 border border-white/5">
-        <a href="#/profile" class="flex items-center gap-3 group cursor-pointer">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-accent-400 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+      <!-- User card at bottom -->
+      <div class="mx-3 mb-4 p-3 rounded-lg" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06);">
+        <a href="#/profile" class="flex items-center gap-3 group cursor-pointer mb-2.5">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style="background: #0891b2;">
             ${initials}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-white text-sm font-medium truncate group-hover:text-primary-300 transition-colors">${user?.full_name || 'Foydalanuvchi'}</p>
-            <p class="text-dark-400 text-xs">${roleLabels[userRole] || userRole}</p>
+            <p class="text-white text-sm font-medium truncate group-hover:text-accent-300 transition-colors leading-tight">${user?.full_name || 'Foydalanuvchi'}</p>
+            <p class="text-slate-500 text-xs">${roleLabels[userRole] || userRole}</p>
           </div>
         </a>
-        <button id="logout-btn" class="mt-3 w-full flex items-center gap-2 px-3 py-2 text-sm text-dark-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200">
+        <div class="h-px bg-white/5 mb-2.5"></div>
+        <button id="logout-btn" class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all duration-200">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-          <span>Chiqish</span>
+          <span>Tizimdan chiqish</span>
         </button>
       </div>
     </aside>

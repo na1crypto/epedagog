@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import db from '../db/index.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
@@ -12,23 +12,23 @@ router.get('/stats', authenticateToken, async (req, res) => {
   try {
     // 1. Total documents count
     const totalDocsRes = await db.query('SELECT COUNT(*) FROM documents');
-    const totalDocuments = parseInt(totalDocsRes.rows[0].count, 10);
+    const totalDocuments = parseInt(totalDocsRes[0][0].count, 10);
 
     // 2. Total users count
     const totalUsersRes = await db.query('SELECT COUNT(*) FROM users');
-    const totalUsers = parseInt(totalUsersRes.rows[0].count, 10);
+    const totalUsers = parseInt(totalUsersRes[0][0].count, 10);
 
     // 3. Total pedagog users count
     const totalPedagRes = await db.query("SELECT COUNT(*) FROM users WHERE role = 'pedagog'");
-    const totalPedagog = parseInt(totalPedagRes.rows[0].count, 10);
+    const totalPedagog = parseInt(totalPedagRes[0][0].count, 10);
 
     // 4. Today's uploads
     const todayUploadsRes = await db.query("SELECT COUNT(*) FROM documents WHERE created_at::date = CURRENT_DATE");
-    const todayUploads = parseInt(todayUploadsRes.rows[0].count, 10);
+    const todayUploads = parseInt(todayUploadsRes[0][0].count, 10);
 
     // 5. Overdue documents
     const overdueRes = await db.query("SELECT COUNT(*) FROM documents WHERE deadline < CURRENT_DATE AND status <> 'uploaded'");
-    const overdueDocuments = parseInt(overdueRes.rows[0].count, 10);
+    const overdueDocuments = parseInt(overdueRes[0][0].count, 10);
 
     // 6. Weekly activity data for chart (Dush - Yak)
     // Counts documents uploaded in the last 7 days grouped by weekday
@@ -45,7 +45,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     
     // Initialize array with 7 elements (Monday - Sunday)
     const weeklyActivity = [0, 0, 0, 0, 0, 0, 0];
-    weeklyRes.rows.forEach(row => {
+    weeklyRes[0].forEach(row => {
       const idx = parseInt(row.dow, 10) - 1; // ISODOW is 1-indexed (Monday=1, Sunday=7)
       if (idx >= 0 && idx < 7) {
         weeklyActivity[idx] = parseInt(row.count, 10);
@@ -70,7 +70,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const teachersRes = await db.query(teachersQuery);
     
     const requiredDocsConst = 14; // Default required documents target
-    const teachersStats = teachersRes.rows.map(t => {
+    const teachersStats = teachersRes[0].map(t => {
       const uploaded = parseInt(t.uploaded, 10);
       const onTime = parseInt(t.on_time, 10);
       const late = parseInt(t.late, 10);
@@ -88,7 +88,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
       return {
         id: t.id,
         name: t.name,
-        subject: t.subject || '—',
+        subject: t.subject || 'â€”',
         uploaded,
         required: requiredDocsConst,
         onTime,
@@ -113,3 +113,5 @@ router.get('/stats', authenticateToken, async (req, res) => {
 });
 
 export default router;
+
+

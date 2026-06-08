@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../db/index.js';
@@ -42,8 +42,8 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
-    const user = result.rows[0];
+    const result = await db.query('SELECT * FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+    const user = result[0][0];
 
     if (!user) {
       return res.status(401).json({ error: 'Email yoki parol noto\'g\'ri.' });
@@ -92,8 +92,8 @@ router.post('/refresh', (req, res) => {
       }
 
       try {
-        const result = await db.query('SELECT * FROM users WHERE id = $1', [payload.id]);
-        const user = result.rows[0];
+        const result = await db.query('SELECT * FROM users WHERE id = ?', [payload.id]);
+        const user = result[0][0];
 
         if (!user || !user.is_active) {
           return res.status(401).json({ error: 'Foydalanuvchi topilmadi yoki faol emas.' });
@@ -125,8 +125,8 @@ router.post('/logout', (req, res) => {
  */
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const result = await db.query('SELECT id, full_name, email, role, subject, phone, avatar_url, is_active, created_at FROM users WHERE id = $1', [req.user.id]);
-    const user = result.rows[0];
+    const result = await db.query('SELECT id, full_name, email, role, subject, phone, avatar_url, is_active, created_at FROM users WHERE id = ?', [req.user.id]);
+    const user = result[0][0];
 
     if (!user) {
       return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
@@ -140,3 +140,5 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 export default router;
+
+

@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+﻿import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,14 +42,14 @@ export async function uploadFile(file) {
 
     // In a real application, you would also need refresh tokens.
     // For demonstration, if we only have folder ID but no credentials, fallback safely.
-    console.log('🤖 Google Drive ulanishi tekshirilmoqda...');
+    console.log('ðŸ¤– Google Drive ulanishi tekshirilmoqda...');
     
     // We assume the user needs to authenticate, but if no tokens are saved, we fallback to local storage
     // to keep the app 100% operational instead of throwing errors.
     throw new Error('Google Drive API avtorizatsiya tokeni topilmadi. Zaxira rejimiga o\'tilmoqda.');
   } catch (error) {
-    console.warn('⚠️ Google Drive yuklashda xatolik:', error.message);
-    console.log('📂 Fayl lokal ravishda serverda saqlanmoqda...');
+    console.warn('âš ï¸ Google Drive yuklashda xatolik:', error.message);
+    console.log('ðŸ“‚ Fayl lokal ravishda serverda saqlanmoqda...');
     return uploadToLocal(file);
   }
 }
@@ -94,7 +94,7 @@ export async function deleteFile(driveFileId, filename) {
       if (fs.existsSync(filePath)) {
         try {
           fs.unlinkSync(filePath);
-          console.log(`🗑️ Lokal fayl o'chirildi: ${filename}`);
+          console.log(`ðŸ—‘ï¸ Lokal fayl o'chirildi: ${filename}`);
         } catch (err) {
           console.error(`Lokal faylni o'chirishda xatolik:`, err);
         }
@@ -113,8 +113,9 @@ export async function deleteFile(driveFileId, filename) {
     );
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
     await drive.files.delete({ fileId: driveFileId });
-    console.log(`🗑️ Google Drive-dan fayl o'chirildi: ${driveFileId}`);
+    console.log(`ðŸ—‘ï¸ Google Drive-dan fayl o'chirildi: ${driveFileId}`);
   } catch (error) {
     console.error('Google Drive-dan faylni o\'chirishda xatolik:', error.message);
   }
 }
+

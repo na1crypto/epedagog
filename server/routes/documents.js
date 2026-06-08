@@ -45,7 +45,17 @@ router.get('/', authenticateToken, async (req, res) => {
     queryText += ' ORDER BY d.created_at DESC';
 
     const [rows] = await db.query(queryText, params);
-    res.json({ data: rows, total: rows.length });
+
+    // Fix localhost URLs → real server URL
+    const serverUrl = process.env.SERVER_URL || `${req.protocol}://${req.get('host')}`;
+    const fixed = rows.map(doc => {
+      if (doc.drive_link && doc.drive_link.includes('localhost')) {
+        doc.drive_link = doc.drive_link.replace(/https?:\/\/localhost:\d+/, serverUrl);
+      }
+      return doc;
+    });
+
+    res.json({ data: fixed, total: fixed.length });
   } catch (error) {
     console.error('Fetch documents error:', error);
     res.status(500).json({ error: 'Server xatoligi.' });

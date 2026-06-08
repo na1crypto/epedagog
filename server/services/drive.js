@@ -72,7 +72,7 @@ function uploadToLocal(file) {
     throw new Error('Fayl ma\'lumoti topilmadi.');
   }
 
-  const serverUrl = process.env.CLIENT_URL ? `http://localhost:${process.env.PORT || 3000}` : '';
+  const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3000}`;
   const fileLink = `${serverUrl}/uploads/${filename}`;
 
   return {
